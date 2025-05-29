@@ -1,0 +1,10 @@
+gimnasio_mgmt/
+├── main.py                 # Punto de entrada principal, menú y lógica de flujo
+├── database.py             # Conexión y operaciones con la BD (SQLite)
+├── auth.py                 # Autenticación, gestión de usuarios y roles
+├── members.py              # Funciones para la gestión de alumnos/miembros
+├── finances.py             # Funciones para ingresos y gastos
+├── utils.py                # Funciones de utilidad (generar IDs, validar datos, etc.)
+├── config.py               # Configuraciones (nombre BD, etc.)
+├── install.sh              # Script de instalación
+└── README.md               # Instrucciones
