@@ -282,11 +282,12 @@ class UserFormDialog(tk.Toplevel):
         if self.existing_username:
             self.load_existing_user_data_dialog() # Renombrado
         else:
-            current_user_role = self.controller.current_user_info.get('role')
-            available_roles = ASSIGNABLE_ROLES_BY_SYSTEM_ADMIN
-            default_role_selection_idx = -1 # Seleccionar el último como staff
-            if current_user_role == ROLE_SUPERUSER: # Superusuario puede asignar cualquier rol
-                available_roles = ALL_DEFINED_ROLES
+            # Siempre se mostrarán los roles que pueden crearse desde la interfaz,
+            # excluyendo el rol de Superadministrador incluso si quien crea es un
+            # superusuario.  Esto evita que se puedan generar cuentas "root" de
+            # manera accidental.
+            available_roles = [r for r in ALL_DEFINED_ROLES if r != ROLE_SUPERUSER]
+            default_role_selection_idx = len(available_roles) - 1  # staff por defecto
             
             self.role_combobox['values'] = available_roles
             if available_roles : self.role_var.set(available_roles[default_role_selection_idx])
@@ -326,7 +327,7 @@ class UserFormDialog(tk.Toplevel):
         self.confirm_password_label = ttk.Label(self.form_frame, text="Confirmar Contraseña:")
         self.confirm_password_entry = ttk.Entry(self.form_frame, textvariable=self.confirm_password_var, show="*", width=35)
         
-        self.role_label = ttk.Label(self.form_frame, text="Rol Asignado (*):")
+        self.role_label = ttk.Label(self.form_frame, text="Tipo de Usuario (*):")
         self.role_combobox = ttk.Combobox(self.form_frame, textvariable=self.role_var, state="readonly", width=33)
 
         self.is_active_checkbutton = ttk.Checkbutton(self.form_frame, text="Cuenta Activa", variable=self.is_active_var, onvalue=True, offvalue=False)
