@@ -21,12 +21,45 @@ except ImportError as e:
     raise
 
 
-def create_system_user(username: str, password: str, role: str, is_active: bool = True) -> tuple[bool, str]:
+def create_system_user(
+    username: str,
+    password: str,
+    role: str,
+    is_active: bool = True,
+    *,
+    allow_superuser_creation: bool = False,
+) -> tuple[bool, str]:
+    """Crea un nuevo usuario del sistema.
+
+    Parameters
+    ----------
+    username : str
+        Nombre de usuario para la nueva cuenta.
+    password : str
+        Contraseña en texto plano que será hasheada.
+    role : str
+        Rol que se asignará al usuario.
+    is_active : bool, optional
+        Indica si la cuenta estará activa tras ser creada.
+    allow_superuser_creation : bool, optional
+        Permite crear la cuenta del superusuario inicial.  ``False`` por
+        defecto para evitar que desde la interfaz se creen nuevos usuarios
+        con el nombre o rol reservado para ``root``.
+
+    Returns
+    -------
+    tuple
+        ``(exito, mensaje_o_id_usuario)``
     """
-    Crea un nuevo usuario del sistema.
-    Devuelve: (éxito: bool, mensaje_o_id_usuario: str)
-    """
-    # (Resto del código de create_system_user sin cambios...)
+
+    username_clean = username.strip().lower()
+
+    if not allow_superuser_creation:
+        if username_clean == SUPERUSER_INIT_USERNAME.lower():
+            return False, "Nombre de usuario reservado para el superadministrador."
+        if role == ROLE_SUPERUSER:
+            return False, "No se puede asignar el rol de Superadministrador."
+
     if not is_valid_system_username(username):
         return False, "Formato de nombre de usuario no válido."
     
@@ -78,7 +111,8 @@ def initialize_superuser_account():
                 success, msg_or_id = create_system_user(
                     SUPERUSER_INIT_USERNAME,
                     SUPERUSER_INIT_PASSWORD,
-                    ROLE_SUPERUSER # Rol del superusuario
+                    ROLE_SUPERUSER,  # Rol del superusuario
+                    allow_superuser_creation=True,
                 )
                 if success:
                     print(f"INFO (auth.py): Superusuario '{SUPERUSER_INIT_USERNAME}' creado con ID: {msg_or_id}.")
@@ -264,8 +298,11 @@ def update_user_role(username: str, new_role: str, current_admin_role: str) -> t
 
     if username_clean == SUPERUSER_INIT_USERNAME.lower() and current_admin_role != ROLE_SUPERUSER:
         return False, "Solo un Superadministrador puede modificar esta cuenta."
-    if new_role == ROLE_SUPERUSER and current_admin_role != ROLE_SUPERUSER:
-        return False, "No tiene permisos para asignar el rol de Superadministrador."
+    if new_role == ROLE_SUPERUSER:
+        if username_clean != SUPERUSER_INIT_USERNAME.lower():
+            return False, "No se pueden crear nuevos Superadministradores."
+        if current_admin_role != ROLE_SUPERUSER:
+            return False, "Solo un Superadministrador puede modificar esta cuenta."
 
     conn = get_db_connection()
     if not conn: return False, "Error de conexión a BD."
